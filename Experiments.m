@@ -1,12 +1,13 @@
 classdef Experiments < handle
     properties (Constant)
         % Imaging experiments, manifold is 'S2'
-        Experiment = {struct(ImageFilename = 'Rooftop.jpg',     MaskFilename = 'Mask2.png',     D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);
-                      struct(ImageFilename = 'Flowers.png',     MaskFilename = [],              D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);
-                      struct(ImageFilename = 'Butterfly.jpg',   MaskFilename = [],              D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);}
+        Experiment = {struct(ImageFilename = 'Images/Rooftop.jpg',     MaskFilename = 'Images/Mask2.png',   D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);
+                      struct(ImageFilename = 'Images/Flowers.png',     MaskFilename = [],                   D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);
+                      struct(ImageFilename = 'Images/Butterfly.jpg',   MaskFilename = [],                   D = 2,  N1 = 300,   N2 = 200,   max_time = 1000,    kconst = 3e-1,  sigma = 7.5e1);}
     end
     methods (Static)
-        function [Experiment, FV, FE, Image] = Load(index)            
+        function [Experiment, FV, FE, Image] = Load(index)
+            rng(12345);
             % Load image and extract intensity and chromaticity
             Experiment          = Experiments.Experiment{index};
 
@@ -35,17 +36,22 @@ classdef Experiments < handle
                 mask                = double(imresize(mask, [N2, N1]));
             end
             image                   = image_orig + sigma*randn(size(image_orig)).*intensity_orig/256;
-            if ~isempty(maskname)                   % This is statement should ideally have been 
-                                                    % after the projection onto RGB, but for the 
-                                                    % experiments in the paper it was accidentally
-                                                    % put after (which is importantly an equally valid
-                                                    % experiment)
+            
+            % There was a mistake here in the original code where the image
+            % was only projected onto RGB-space when a mask was present.
             image(image < 0)        = 0;            % Project image back onto RGB-space
             image(image > 255)      = 255;          % Project image back onto RGB-space
+            if ~isempty(maskname)
                 image               = image.*mask;
             end
             intensity               = vecnorm(double(image), 2, 3);
-            chromaticity            = double(image)./vecnorm(double(image), 2, 3);
+            % A fair way to deal with NANs in chromaticity (which happen
+            % for pixels where [R, G, B] = [0, 0, 0] due to zero div.): set 
+            % chromaticity equal to [0, 0, 0], which is not on the sphere,
+            % but equally penalizes all points on the sphere (i.e. NANs do
+            % not actually contribute to the minimization)
+            fixNANs                 = intensity == 0;
+            chromaticity            = double(image)./(intensity + fixNANs);
             
             % Setup cost functions
             if ~isempty(maskname)

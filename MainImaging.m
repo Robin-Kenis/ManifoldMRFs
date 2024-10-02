@@ -25,13 +25,16 @@ mrf = MRF("S2", Experiment.D, E);
 mrf.CostFunctions(FV, FE);
 mrf.ReduceToQuotientRing();
 
+% Don't keep extra copy of large matrices
+clear E FV FE;
+
 %% Setup optimization problem
 
 prob = SetupMosekGeodesic(mrf);
 
 %% Solve optimization problem
 
-disp('solver started');
+% Remove some unnecessary
 
 param.MSK_DPAR_OPTIMIZER_MAX_TIME       = Experiment.max_time;
 param.MSK_IPAR_INTPNT_MAX_ITERATIONS    = 50;
@@ -39,6 +42,7 @@ param.MSK_DPAR_INTPNT_CO_TOL_DFEAS      = 1e-10;
 param.MSK_DPAR_INTPNT_CO_TOL_PFEAS      = 1e-10;
 param.MSK_DPAR_INTPNT_CO_TOL_REL_GAP    = 1e-20;
 
+disp('solver started');
 tic;
 [r,res] = mosekopt('minimize info', prob, param);
 time    = toc;
