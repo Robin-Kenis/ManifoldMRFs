@@ -14,7 +14,7 @@ rng(12345);
 %% Graph structure and problem parameters
 
 % Choose number of labels
-NLabels = 150;
+NLabels = 200;
 
 % Load problem instance
 [Experiment, ~, ~, Image] = Experiments.Load(1);  % Load experiment 1, 2 or 3
@@ -63,7 +63,7 @@ time = toc;
 %% Extract the solutions
 
 % Extract solution marginals (Tmu_i, Tmu_ij)
-vx          = V(labels, :).';
+vx          = V(labels, :);
 
 %% Check solution quality
 
@@ -77,7 +77,7 @@ fprintf('dual %d \n', optimal_lower_bound);
 
 %% Figures
 
-opt_chrom           = permute(reshape(vx.', Experiment.N1, Experiment.N2, 3), [2, 1, 3]);
+opt_chrom           = permute(reshape(vx, Experiment.N1, Experiment.N2, 3), [2, 1, 3]);
 
 image_orig          = uint8(round(Image.ImageClean));
 image               = uint8(round(Image.ImageNoisy));
