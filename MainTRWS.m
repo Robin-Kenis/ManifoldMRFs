@@ -13,24 +13,21 @@ rng(12345);
 
 %% Graph structure and problem parameters
 
-% Choose number of labels
-NLabels = 200;
-
 % Load problem instance
-[Experiment, ~, ~, Image] = Experiments.Load(1);  % Load experiment 1, 2 or 3
+[Experiment, ~, ~, Image] = Experiments.Load(2);  % Load experiment 1, 2 or 3
 
 % Define edge set of N1xN2-grid graph
 E = EdgesGridGraph(Experiment.N1, Experiment.N2);
 
 % Sample the Manifold
-all_samples = 8*NLabels;
+all_samples = 8*Experiment.NLabels;
 V = [];
 num_samples = 0;
-while num_samples ~= NLabels
+while num_samples ~= Experiment.NLabels
     [V,Tri] = SpiralSampleSphere(all_samples, false);
     V = V(all(V > 0, 2), :);
     num_samples = size(V,  1);
-    all_samples = all_samples + NLabels - num_samples;
+    all_samples = all_samples + Experiment.NLabels - num_samples;
 end
 
 % Construct the dataterms, regularization terms and adjacency matrix
@@ -39,8 +36,6 @@ NVert = Experiment.N1*Experiment.N2;
 
 CData   = reshape(permute(Image.ChromaticityNoisy, [2, 1, 3]), NVert, 3);
 FV  = ones(size(V, 1), 1)*vecnorm(CData, 2, 2).' - V*CData.';
-%FV  = FV(:);
-%FV = reshape(FV, NLabels, NVert);
 
 FE = Experiment.kconst*abs(acos(V*V.'));
 
